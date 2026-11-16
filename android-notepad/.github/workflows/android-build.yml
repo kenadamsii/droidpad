@@ -2,7 +2,9 @@ name: Android Build
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main, develop ]
 
@@ -21,14 +23,17 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
       
+      - name: Setup Gradle Wrapper
+        uses: gradle/gradle-wrapper-action@v2
+
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
+        
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
       
-      - name: Build APK
-        run: ./gradlew bundleRelease --no-daemon
-      
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: app-release.apk
-          path: app/build/outputs/apk/release/*.apk
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
