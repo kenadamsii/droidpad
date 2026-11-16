@@ -1,39 +1,45 @@
-name: Android Build
+name: Android Build CI
 
 on:
   push:
-    branches: [ main, develop, master ]
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [ main, develop ]
+    branches: [master, develop]  # Trigger on both branches
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       
-      - name: Setup Gradle Wrapper
-        uses: gradle/gradle-wrapper-action@v2
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-        
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build and push image
+        run: |
+          set -e
+          
+          # Pull the build box
+          docker pull mingchen/android-build-box:latest
+          
+          # Get project root directory (assumed to be current dir)
+          PROJECT_DIR=$(pwd)
+          
+          # Build Android APK using your build script or standard commands
+          # This is a placeholder - adjust based on your actual build process
+          echo "Building Android application..."
+          chmod +x /home/khadamsii/.openclaw/workspace/android-notepad/docker-build.sh
+          cd /home/khadamsii/.openclaw/workspace/android-notepad
+          docker run --rm mingchen/android-build-box /bin/bash -c "./docker-build.sh"
       
-      - name: Upload Debug APK artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: android-build-output
+          path: |
+            **/APK
+            **/OBB
